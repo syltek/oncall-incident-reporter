@@ -1,0 +1,21 @@
+metadata:
+  service: "test-service"
+  environment: "development"
+  team: "test-team"
+
+slack_config:
+  channel_id: "C123456"
+  message_format: "Test message: {}"
+
+endpoints:
+  slack_command: "/test-command"
+  slack_modal_parser: "/parse-modal"
+
+modal:
+  title: "Test Modal"
+  inputs:
+    - key: "test_input"
+      label: "Test Input"
+      placeholder: "Enter test value"
+      required: true
+      type: "text"

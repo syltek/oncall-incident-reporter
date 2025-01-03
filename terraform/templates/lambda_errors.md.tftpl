@@ -1,0 +1,33 @@
+## Lambda Errors Monitor
+
+Errors detected in the AWS Lambda function ${lambda_name} in the ${environment} environment.
+
+Errors: `{{value}}`.
+
+### Possible causes:
+
+- Lambda configuration error.
+- Lambda appication error.
+
+### Actions to take:
+
+- Check AWS console for more details.
+- Check lambda logs in cloudwatch for more details. [Link to Cloudwatch](${cloudwatch_url}).
+
+{{#is_alert}}
+{{override_priority 'P1'}}
+{{/is_alert}}
+
+{{#is_warning}}
+{{override_priority 'P3'}}
+{{/is_warning}}
+
+{{#is_alert_recovery}}
+{{override_priority 'P1'}}
+{{/is_alert_recovery}}
+
+{{#is_warning_recovery}}
+{{override_priority 'P3'}}
+{{/is_warning_recovery}}
+
+${alert_destination}

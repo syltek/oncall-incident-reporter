@@ -1,0 +1,48 @@
+---
+metadata:
+  service: "oncall-incident-reporter"
+  environment: "dev"
+  team: "platform"
+
+slack_config:
+  message_format: |
+    *New Incident Report 🚨*
+
+    *Severity:* {{severity}} 🔥
+    *Domain:* {{domains_affected}} 🎯
+    *Description:* {{description}} 🗒️
+
+    *Reported by:* <@{{username}}>
+
+endpoints:
+  slack_command: "/dev/incident"
+  slack_modal_parser: "/dev/incident/submit"
+
+modal:
+  title: "Incident Report"
+  inputs:
+    - key: "input_severity"
+      label: "Severity Level"
+      placeholder: "Select severity level"
+      required: true
+      type: "select"
+      options:
+        - text: "High"
+        - text: "Medium"
+        - text: "Low"
+
+    - key: "input_domains_affected"
+      label: "Domains Affected"
+      placeholder: "Select domains affected"
+      required: true
+      type: "select"
+      options:
+        - text: "Clubs"
+        - text: "Players"
+        - text: "NotPayments"
+
+    - key: "input_incident_description"
+      label: "Incident Description"
+      placeholder: "Enter incident description (Min 50 characters)"
+      required: true
+      type: "text"
