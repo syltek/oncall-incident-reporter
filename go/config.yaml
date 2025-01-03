@@ -1,0 +1,51 @@
+---
+
+slack_config:
+  token: "your-default-slack-token"
+  channel_id: "your-default-slack-channel-id"
+  message_format: |
+    *New Incident Report 🚨*
+
+    *Severity:* {{severity}} 🔥
+    *Domain:* {{domains_affected}} 🎯
+    *Description:* {{description}} 🗒️
+
+    *Reported by:* <@{{username}}>
+
+monitor_config:
+  id: 21156336 # Replace with your monitor ID
+  new_critical_threshold: 100.0 # Replace with your new critical threshold
+  alert_recipient: "@slack-platform-datadog-test" # Replace with your alert recipient
+
+endpoints:
+  slack_command: "/incident"
+  slack_modal_parser: "/incident/submit"
+
+modal:
+  title: "Incident Report"
+  inputs:
+    - key: "input_severity"
+      label: "Severity Level"
+      placeholder: "Select severity level"
+      required: true
+      type: "select"
+      options:
+        - text: "High"
+        - text: "Medium"
+        - text: "Low"
+
+    - key: "input_domains_affected"
+      label: "Domains Affected"
+      placeholder: "Select domains affected"
+      required: true
+      type: "select"
+      options:
+        - text: "Clubs"
+        - text: "Players"
+        - text: "NotPayments"
+
+    - key: "input_incident_description"
+      label: "Incident Description"
+      placeholder: "Enter incident description (Min 50 characters)"
+      required: true
+      type: "text"

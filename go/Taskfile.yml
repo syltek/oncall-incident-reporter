@@ -1,0 +1,51 @@
+version: '3'
+
+
+# Before starting make sure to start all dependencies:
+# - air
+# - golangci-lint
+tasks:
+  # Install Go dependencies
+  install:
+    desc: Install project dependencies
+    cmds:
+      - go mod tidy
+      - go mod vendor
+
+  # Run tests
+  test:
+    desc: Run tests
+    cmds:
+      - go test ./...
+
+  # Build the application
+  build:
+    desc: Build the Go application
+    cmds:
+      - go build -o bin/app ./cmd
+
+  # Format Go code
+  fmt:
+    desc: Format Go code
+    cmds:
+      - go fmt ./...
+
+  # Lint Go code
+  lint:
+    desc: Run Go linter
+    cmds:
+      - golangci-lint run
+
+  # Start the application with live reloading using Air
+  # Air https://github.com/air-verse/air
+  start:
+    desc: Start the application locally with live reload
+    cmds:
+      - DEBUG=true LOCAL=true air -c .air.toml
+
+  # Run tests and then build the application
+  test_and_build:
+    desc: Run tests and then build the application
+    cmds:
+      - task test
+      - task build
