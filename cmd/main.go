@@ -22,11 +22,6 @@ import (
 	"go.uber.org/zap"
 )
 
-const (
-    defaultPort     = "8080"
-    shutdownTimeout = 10 * time.Second
-)
-
 var (
     cfg    *config.Config
     logger *zap.Logger
@@ -34,7 +29,7 @@ var (
 
 // initLogger initializes the application logger based on the DEBUG environment variable.
 func initLogger() {
-    debug := os.Getenv("DEBUG") == "true"
+    debug := cfg.LogLevel == config.DEBUG_LOG_LEVEL
     logutil.InitLogger(debug)
     logger = logutil.Logger
 }
@@ -44,32 +39,47 @@ func initConfig() {
     var err error
     cfg, err = config.LoadConfig()
     if err != nil {
-        logger.Fatal("Failed to load configuration",
-            zap.Error(err),
+        fmt.Fprintf(os.Stderr, "Failed to load configuration: %v\n", err)
+        os.Exit(1)
+    }
+    if cfg.LogLevel == config.DEBUG_LOG_LEVEL {
+        fmt.Printf("Configuration loaded successfully:\n"+
+            "  Log Level: %s\n"+
+            "  Local Port: %d\n"+
+            "  Slack Config:\n"+
+            "    Token: %s\n"+
+            "    Channel ID: %s\n"+
+            "  Endpoints:\n"+
+            "    Base URL: %s\n",
+            cfg.LogLevel,
+            cfg.Local.Port,
+            maskToken(cfg.SlackConfig.Token),
+            cfg.SlackConfig.ChannelID,
+            cfg.Endpoints,
         )
     }
-    logger.Debug("Configuration loaded successfully",
-        zap.Any("endpoints", cfg.Endpoints),
-        zap.Any("slack_config", cfg.SlackConfig),
-        zap.Any("modal", cfg.Modal),
-    )
+}
+
+// maskToken masks a token string for secure logging
+func maskToken(token string) string {
+    if len(token) <= 8 {
+        return "****"
+    }
+    return token[:4] + "..." + token[len(token)-4:]
 }
 
 func init() {
-    initLogger()
     initConfig()
+    initLogger()
     logger.Info("Application initialization completed")
 }
 
 // startLocalServer starts the HTTP server for local development
 func startLocalServer(r *router.Router) error {
-    port := os.Getenv("PORT")
-    if port == "" {
-        port = defaultPort
-    }
+    port := cfg.Local.Port
 
     srv := &http.Server{
-        Addr:         ":" + port,
+        Addr:         ":" + fmt.Sprintf("%d", port),
         Handler:      r,
         ReadTimeout:  5 * time.Second,
         WriteTimeout: 10 * time.Second,
@@ -84,7 +94,7 @@ func startLocalServer(r *router.Router) error {
 
     // Start the server
     go func() {
-        logger.Info("Starting local server", zap.String("port", port))
+        logger.Info("Starting local server", zap.Int("port", port))
         serverErrors <- srv.ListenAndServe()
     }()
 
@@ -97,7 +107,7 @@ func startLocalServer(r *router.Router) error {
         logger.Info("Starting shutdown", zap.String("signal", sig.String()))
         
         // Give outstanding requests a deadline for completion.
-        ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+        ctx, cancel := context.WithTimeout(context.Background(), time.Duration(cfg.Local.ShutdownTimeout) * time.Second)
         defer cancel()
 
         // Asking listener to shut down and shed load.
@@ -127,7 +137,7 @@ func main() {
 	handler := handlers.NewSlackHandler(slackService, datadogService, cfg)
     r := router.NewRouter(handler, cfg)
 
-    if os.Getenv("LOCAL") == "true" {
+    if cfg.Local.Enabled {
         if err := startLocalServer(r); err != nil {
             logger.Fatal("Server error", zap.Error(err))
         }

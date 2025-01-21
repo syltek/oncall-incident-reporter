@@ -1,4 +1,11 @@
 ---
+
+local:
+  enabled: true
+  port: 8080
+  shutdown_timeout: 10 # seconds
+
+log_level: "DEBUG" # DEBUG, INFO
 metadata:
   service: "oncall-incident-reporter"
   environment: "dev"
