@@ -9,24 +9,48 @@ import (
 )
 
 const (
-	defaultConfigFile     = "config.yaml"
-	slackTokenEnv         = "SLACK_TOKEN"
-	slackSigningSecretEnv = "SLACK_SIGNING_SECRET"
-	configFileEnv         = "CONFIG_FILE"
+	slackTokenEnv           = "SLACK_TOKEN"
+	slackSigningSecretEnv   = "SLACK_SIGNING_SECRET"
+	logLevelEnv             = "LOG_LEVEL"
+	localPortEnv            = "LOCAL_PORT"
+	localShutdownTimeoutEnv = "LOCAL_SHUTDOWN_TIMEOUT"
+	configFileEnv           = "CONFIG_FILE"
+)
+
+const (
+	defaultConfigFile       = "config.yaml"
+)
+
+const (
+	DEFAULT_LOCAL_PORT             = 8080
+	DEFAULT_LOCAL_SHUTDOWN_TIMEOUT = 5
+	DEFAULT_LOG_LEVEL              = "INFO"
+)
+
+const (
+	DEBUG_LOG_LEVEL = "DEBUG"
 )
 
 // Config holds the complete application configuration
 type Config struct {
 	Metadata      *Metadata       `mapstructure:"metadata"`
-	SlackConfig   *SlackConfig   `mapstructure:"slack_config"`
+	SlackConfig   *SlackConfig    `mapstructure:"slack_config"`
 	Endpoints     *Endpoints      `mapstructure:"endpoints"`
 	Modal         *Modal          `mapstructure:"modal"`
+	Local         *Local          `mapstructure:"local"`
+	LogLevel      string          `mapstructure:"log_level"`
+}
+
+type Local struct {
+	Enabled bool        `mapstructure:"enabled"`
+	Port int            `mapstructure:"port"`
+	ShutdownTimeout int `mapstructure:"shutdown_timeout"`
 }
 
 type Metadata struct {
-	Service       string          `mapstructure:"service"`
-	Environment   string          `mapstructure:"environment"`
-	Team          string          `mapstructure:"team"`
+	Service       string `mapstructure:"service"`
+	Environment   string `mapstructure:"environment"`
+	Team          string `mapstructure:"team"`
 }
 
 // SlackConfig holds Slack-specific configuration
@@ -55,11 +79,11 @@ type Option struct {
 
 // Input represents a single input field configuration in the modal
 type Input struct {
-	Key         string `mapstructure:"key"`
-	Label       string `mapstructure:"label"`
-	Placeholder string `mapstructure:"placeholder"`
-	Required    bool   `mapstructure:"required"`
-	Type        string `mapstructure:"type"`
+	Key         string   `mapstructure:"key"`
+	Label       string   `mapstructure:"label"`
+	Placeholder string   `mapstructure:"placeholder"`
+	Required    bool     `mapstructure:"required"`
+	Type        string   `mapstructure:"type"`
 	Options     []Option `mapstructure:"options"`
 }
 
@@ -73,6 +97,9 @@ func LoadConfigWithViper(v *viper.Viper) (*Config, error) {
 	// Bind env variables before any other operations
 	v.BindEnv("slack_config.slack_token", slackTokenEnv)
 	v.BindEnv("slack_config.slack_signing_secret", slackSigningSecretEnv)
+	v.BindEnv("log_level", logLevelEnv)
+	v.BindEnv("local.port", localPortEnv)
+	v.BindEnv("local.shutdown_timeout", localShutdownTimeoutEnv)
 
 	if err := setupViper(v); err != nil {
 		return nil, fmt.Errorf("setup viper: %w", err)
@@ -103,6 +130,13 @@ func setupViper(v *viper.Viper) error {
 		configFile = defaultConfigFile
 	}
 	v.SetConfigFile(configFile)
+
+	// Set default values
+	v.SetDefault("local.enabled", false)
+	v.SetDefault("local.port", DEFAULT_LOCAL_PORT)
+	v.SetDefault("local.shutdown_timeout", DEFAULT_LOCAL_SHUTDOWN_TIMEOUT)
+	v.SetDefault("log_level", DEFAULT_LOG_LEVEL)
+
 	return nil
 }
 
