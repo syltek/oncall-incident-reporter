@@ -1,0 +1,28 @@
+# .air.toml - Configuration for the Air live-reloading tool
+
+# Directory to watch for changes (e.g., "cmd", "internal", "pkg", etc.)
+root = "."
+tmp_dir = "tmp"
+
+# Extensions to watch for changes
+include_ext = ["go", "yaml"]
+
+# Include config file
+include_file = ["config.yaml"]
+
+# Exclude certain files or directories from being watched
+exclude = ["tmp", "vendor", ".git"]
+
+# Command to execute when the application starts
+[build]
+  cmd = "go build -o bin/app ./cmd"
+  bin = "bin/app"
+
+# Command to execute to run the app after building
+[run]
+  cmd = "./bin/app"
+  allow_modifications = true
+
+[screen]
+  clear_on_rebuild = true
+  keep_scroll = true
