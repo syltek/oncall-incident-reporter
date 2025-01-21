@@ -7,9 +7,6 @@ tmp_dir = "tmp"
 # Extensions to watch for changes
 include_ext = ["go", "yaml"]
 
-# Include config file
-include_file = ["config.yaml"]
-
 # Exclude certain files or directories from being watched
 exclude = ["tmp", "vendor", ".git"]
 
