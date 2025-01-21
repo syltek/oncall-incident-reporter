@@ -113,6 +113,18 @@ const (
 // createDatadogEvent creates a new event in Datadog with the given message
 func (h *SlackHandler) createDatadogEvent(messageText string, fieldData map[string]string) error {
     ctx := datadog.NewDefaultContext(context.Background())
+
+	// Enrich the message with event time and event source
+	// If local is enabled, use local_execution as the event source
+	// Otherwise, use the AWS lambda function name
+	event_source := ""
+	if h.config.Local.Enabled {
+		event_source = "local_execution"
+	} else {
+		event_source = os.Getenv("AWS_LAMBDA_FUNCTION_NAME")
+	}
+
+	messageText = fmt.Sprintf("%s\nEvents emitted by the %s seen at %s since %s", messageText, event_source, time.Now().Format(time.RFC3339), time.Now().Format(time.RFC3339))
     
     eventConfig := h.buildEventConfig(messageText, fieldData)
     
@@ -131,21 +143,6 @@ func (h *SlackHandler) createDatadogEvent(messageText string, fieldData map[stri
 
     return nil
 }
-
-
-// TODO: Add tags, severity and domain.
-// %%% 
-// *New Incident Report 🚨*
-
-// *Severity:* High 🔥
-// *Domain:* Clubs 🎯
-// *Description:* Error in clubs. We can't create a new club 🗒️
-
-// *Reported by:* <@victormoreno>
-
-// Events emitted by the persistentvolume-controller seen at 2025-01-17 12:58:36 +0000 UTC since 2025-01-10 03:48:22 +0000 UTC
-
-//  %%%
 
 // buildEventConfig creates the event configuration
 func (h *SlackHandler) buildEventConfig(messageText string, fieldData map[string]string) datadogV1.EventCreateRequest {
@@ -259,12 +256,6 @@ func (h *SlackHandler) generateIncidentMessage(fields map[string]string, usernam
 	for placeholder, value := range replacements {
 		message = strings.ReplaceAll(message, placeholder, value)
 	}
-	// Get AWS lambda function name
-	lambdaFunctionName := os.Getenv("AWS_LAMBDA_FUNCTION_NAME")
-	if lambdaFunctionName == "" {
-		lambdaFunctionName = "local_execution"
-	}
-	message = fmt.Sprintf("%s\nEvents emitted by the %s seen at %s since %s", message, lambdaFunctionName, time.Now().Format(time.RFC3339), time.Now().Format(time.RFC3339))
 	return message
 }
 
