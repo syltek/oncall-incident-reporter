@@ -117,6 +117,17 @@ The application is structured into several key packages:
   - `errors/` - Error handling
   - `logutil/` - Logging utilities
 
+## Slack Command Setup
+
+For detailed instructions on setting up the Slack command integration, including:
+- Creating a Slack App
+- Configuring slash commands
+- Setting up interactivity endpoints
+- Configuring authentication
+- Testing the integration
+
+See [Slack Command Setup Guide](doc/example_slack_command.md)
+
 ## Contributing
 
 1. Fork the repository
