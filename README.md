@@ -145,8 +145,8 @@ in the world. We're passionate about technology and sports, building tools that 
 raquet sports.
 
 - Website: https://playtomic.io
-- Tech Blog: https://tech.playtomic.io
-- Careers: https://jobs.playtomic.io
+- Our values: https://playtomic.factorialhr.es/#values
+- Careers: https://playtomic.factorialhr.es/#jobs
 
 ## License
 
