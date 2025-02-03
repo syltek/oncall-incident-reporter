@@ -18,7 +18,7 @@ const (
 )
 
 const (
-	defaultConfigFile       = "config.yaml"
+	defaultConfigFile = "config.yaml"
 )
 
 const (
@@ -33,24 +33,24 @@ const (
 
 // Config holds the complete application configuration
 type Config struct {
-	Metadata      *Metadata       `mapstructure:"metadata"`
-	SlackConfig   *SlackConfig    `mapstructure:"slack_config"`
-	Endpoints     *Endpoints      `mapstructure:"endpoints"`
-	Modal         *Modal          `mapstructure:"modal"`
-	Local         *Local          `mapstructure:"local"`
-	LogLevel      string          `mapstructure:"log_level"`
+	Metadata    *Metadata    `mapstructure:"metadata"`
+	SlackConfig *SlackConfig `mapstructure:"slack_config"`
+	Endpoints   *Endpoints   `mapstructure:"endpoints"`
+	Modal       *Modal       `mapstructure:"modal"`
+	Local       *Local       `mapstructure:"local"`
+	LogLevel    string       `mapstructure:"log_level"`
 }
 
 type Local struct {
-	Enabled bool        `mapstructure:"enabled"`
-	Port int            `mapstructure:"port"`
-	ShutdownTimeout int `mapstructure:"shutdown_timeout"`
+	Enabled         bool `mapstructure:"enabled"`
+	Port            int  `mapstructure:"port"`
+	ShutdownTimeout int  `mapstructure:"shutdown_timeout"`
 }
 
 type Metadata struct {
-	Service       string `mapstructure:"service"`
-	Environment   string `mapstructure:"environment"`
-	Team          string `mapstructure:"team"`
+	Service     string `mapstructure:"service"`
+	Environment string `mapstructure:"environment"`
+	Team        string `mapstructure:"team"`
 }
 
 // SlackConfig holds Slack-specific configuration
@@ -104,16 +104,16 @@ func LoadConfigWithViper(v *viper.Viper) (*Config, error) {
 	if err := setupViper(v); err != nil {
 		return nil, fmt.Errorf("setup viper: %w", err)
 	}
-	
+
 	if err := readConfiguration(v); err != nil {
 		return nil, fmt.Errorf("read configuration: %w", err)
 	}
-	
+
 	config, err := unmarshalConfig(v)
 	if err != nil {
 		return nil, fmt.Errorf("unmarshal config: %w", err)
 	}
-	
+
 	if err := config.validate(); err != nil {
 		return nil, fmt.Errorf("validate config: %w", err)
 	}
@@ -125,7 +125,7 @@ func LoadConfigWithViper(v *viper.Viper) (*Config, error) {
 func setupViper(v *viper.Viper) error {
 	// Read config file from environment variable
 	configFile := os.Getenv(configFileEnv)
-    
+
 	if configFile == "" {
 		configFile = defaultConfigFile
 	}

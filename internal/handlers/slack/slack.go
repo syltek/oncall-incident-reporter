@@ -23,35 +23,35 @@ import (
 
 // SlackHandler handles Slack-related functionality.
 type SlackHandler struct {
-	slackService *service.SlackService
+	slackService   *service.SlackService
 	datadogService *service.DatadogService
-	config *config.Config
+	config         *config.Config
 }
 
 // NewSlackHandler creates a new SlackHandler instance.
 func NewSlackHandler(slackService *service.SlackService, datadogService *service.DatadogService, config *config.Config) *SlackHandler {
 	return &SlackHandler{
-		slackService: slackService,
+		slackService:   slackService,
 		datadogService: datadogService,
-		config: config,
+		config:         config,
 	}
 }
 
 // HandleCommand processes Slack commands to trigger modals.
 func (h *SlackHandler) HandleCommand(w http.ResponseWriter, r *http.Request) {
 	logutil.Debug("Processing Slack command")
-    if err := r.ParseForm(); err != nil {
-        h.handleError(w, apperrors.New(http.StatusBadRequest, "Failed to parse form data", apperrors.CategoryClient, err))
-        return
-    }
+	if err := r.ParseForm(); err != nil {
+		h.handleError(w, apperrors.New(http.StatusBadRequest, "Failed to parse form data", apperrors.CategoryClient, err))
+		return
+	}
 	// Debug the form
 	logutil.Debug("Form", zap.Any("form", r.Form))
 
 	modal := h.createModal(r.FormValue("trigger_id"))
-    if err := modal.SendModal(h.slackService); err != nil {
-        h.handleError(w, apperrors.New(http.StatusInternalServerError, "Failed to send modal to Slack", apperrors.CategoryServer, err))
-        return
-    }
+	if err := modal.SendModal(h.slackService); err != nil {
+		h.handleError(w, apperrors.New(http.StatusInternalServerError, "Failed to send modal to Slack", apperrors.CategoryServer, err))
+		return
+	}
 
 	logutil.Info("Slack modal sent successfully", zap.String("trigger_id", r.FormValue("trigger_id")))
 	w.WriteHeader(http.StatusOK)
@@ -60,10 +60,10 @@ func (h *SlackHandler) HandleCommand(w http.ResponseWriter, r *http.Request) {
 // HandleModalSubmission processes modal submissions from Slack.
 func (h *SlackHandler) HandleModalSubmission(w http.ResponseWriter, r *http.Request) {
 	logutil.Debug("Processing modal submission")
-    if err := r.ParseForm(); err != nil {
-        h.handleError(w, apperrors.New(http.StatusBadRequest, "Failed to parse form data", apperrors.CategoryClient, err))
-        return
-    }
+	if err := r.ParseForm(); err != nil {
+		h.handleError(w, apperrors.New(http.StatusBadRequest, "Failed to parse form data", apperrors.CategoryClient, err))
+		return
+	}
 
 	// Debug the form
 	logutil.Debug("Form", zap.Any("form", r.Form))
@@ -105,14 +105,14 @@ func (h *SlackHandler) HandleModalSubmission(w http.ResponseWriter, r *http.Requ
 
 // Constants for Datadog event configuration
 const (
-    eventTitle = "New on-call alert from slack slash command"
-    textBlockStart = "%%% \n"
-    textBlockEnd = "\n %%%"
+	eventTitle     = "New on-call alert from slack slash command"
+	textBlockStart = "%%% \n"
+	textBlockEnd   = "\n %%%"
 )
 
 // createDatadogEvent creates a new event in Datadog with the given message
 func (h *SlackHandler) createDatadogEvent(messageText string, fieldData map[string]string) error {
-    ctx := datadog.NewDefaultContext(context.Background())
+	ctx := datadog.NewDefaultContext(context.Background())
 
 	// Enrich the message with event time and event source
 	// If local is enabled, use local_execution as the event source
@@ -125,68 +125,68 @@ func (h *SlackHandler) createDatadogEvent(messageText string, fieldData map[stri
 	}
 
 	messageText = fmt.Sprintf("%s\nEvents emitted by the %s seen at %s since %s", messageText, event_source, time.Now().Format(time.RFC3339), time.Now().Format(time.RFC3339))
-    
-    eventConfig := h.buildEventConfig(messageText, fieldData)
-    
-    ddResponse, err := h.sendEventToDatadog(ctx, eventConfig)
-    if err != nil {
-        return fmt.Errorf("failed to send event to Datadog: %w", err)
-    }
 
-    if err := h.validateResponse(ddResponse); err != nil {
-        return err
-    }
+	eventConfig := h.buildEventConfig(messageText, fieldData)
 
-    logutil.Info("Datadog event created successfully", 
-        zap.String("url", *ddResponse.GetEvent().Url), 
-        zap.String("status", ddResponse.GetStatus()))
+	ddResponse, err := h.sendEventToDatadog(ctx, eventConfig)
+	if err != nil {
+		return fmt.Errorf("failed to send event to Datadog: %w", err)
+	}
 
-    return nil
+	if err := h.validateResponse(ddResponse); err != nil {
+		return err
+	}
+
+	logutil.Info("Datadog event created successfully",
+		zap.String("url", *ddResponse.GetEvent().Url),
+		zap.String("status", ddResponse.GetStatus()))
+
+	return nil
 }
 
 // buildEventConfig creates the event configuration
 func (h *SlackHandler) buildEventConfig(messageText string, fieldData map[string]string) datadogV1.EventCreateRequest {
-    return datadogV1.EventCreateRequest{
-        Title:          eventTitle,
-        Text:          textBlockStart + messageText + textBlockEnd,
-        Priority:       *datadogV1.NewNullableEventPriority(datadogV1.EVENTPRIORITY_NORMAL.Ptr()),
-        AlertType:      datadogV1.EVENTALERTTYPE_ERROR.Ptr(),
-        Tags:          h.buildEventTags(fieldData),
-        SourceTypeName: datadog.PtrString("slack"),
-        AggregationKey: datadog.PtrString(h.getAggregationKey()),
-    }
+	return datadogV1.EventCreateRequest{
+		Title:          eventTitle,
+		Text:           textBlockStart + messageText + textBlockEnd,
+		Priority:       *datadogV1.NewNullableEventPriority(datadogV1.EVENTPRIORITY_NORMAL.Ptr()),
+		AlertType:      datadogV1.EVENTALERTTYPE_ERROR.Ptr(),
+		Tags:           h.buildEventTags(fieldData),
+		SourceTypeName: datadog.PtrString("slack"),
+		AggregationKey: datadog.PtrString(h.getAggregationKey()),
+	}
 }
 
 // buildEventTags returns the tags for the event
 func (h *SlackHandler) buildEventTags(fieldData map[string]string) []string {
-    return []string{
-        "env:" + h.config.Metadata.Environment,
-        "team:" + h.config.Metadata.Team,
-        "service:" + h.config.Metadata.Service,
+	return []string{
+		"env:" + h.config.Metadata.Environment,
+		"team:" + h.config.Metadata.Team,
+		"service:" + h.config.Metadata.Service,
 		"severity:" + fieldData["input_severity"],
 		"domain:" + fieldData["input_domains_affected"],
-    }
+	}
 }
 
 // getAggregationKey returns the aggregation key for the event
 func (h *SlackHandler) getAggregationKey() string {
-    return h.config.Metadata.Environment + "-" + h.config.Metadata.Service
+	return h.config.Metadata.Environment + "-" + h.config.Metadata.Service
 }
 
 // sendEventToDatadog sends the event to Datadog
 func (h *SlackHandler) sendEventToDatadog(ctx context.Context, req datadogV1.EventCreateRequest) (*datadogV1.EventCreateResponse, error) {
-    ddResponse, err := h.datadogService.CreateEvent(ctx, req)
-    if err != nil {
-        logutil.Error("Failed to create Datadog event", zap.Error(err))
-        return nil, err
-    }
+	ddResponse, err := h.datadogService.CreateEvent(ctx, req)
+	if err != nil {
+		logutil.Error("Failed to create Datadog event", zap.Error(err))
+		return nil, err
+	}
 
-    return ddResponse, nil
+	return ddResponse, nil
 }
 
 // validateResponse validates the Datadog API response
 func (h *SlackHandler) validateResponse(response *datadogV1.EventCreateResponse) error {
-    status := response.GetStatus()
+	status := response.GetStatus()
 
 	logutil.Debug("Datadog response status", zap.String("status", status))
 
@@ -194,23 +194,23 @@ func (h *SlackHandler) validateResponse(response *datadogV1.EventCreateResponse)
 		return fmt.Errorf("failed to create Datadog event: status not expected: %s", status)
 	}
 
-    return nil
+	return nil
 }
 
 func (h *SlackHandler) handleError(w http.ResponseWriter, err error) {
-    var appErr *apperrors.AppError
-    if !errors.As(err, &appErr) {
-        appErr = apperrors.New(http.StatusInternalServerError, "Internal server error", apperrors.CategoryServer, err)
-    }
-    
-    logutil.Error(appErr.Message, zap.Error(appErr))
-    http.Error(w, appErr.Message, appErr.Code)
+	var appErr *apperrors.AppError
+	if !errors.As(err, &appErr) {
+		appErr = apperrors.New(http.StatusInternalServerError, "Internal server error", apperrors.CategoryServer, err)
+	}
+
+	logutil.Error(appErr.Message, zap.Error(appErr))
+	http.Error(w, appErr.Message, appErr.Code)
 }
 
 func (h *SlackHandler) createModal(triggerID string) *slackmodal.Modal {
 	logutil.Debug("Creating modal", zap.String("trigger_id", triggerID))
 	modal := slackmodal.NewModal(h.config.Modal.Title, triggerID)
-	
+
 	for _, input := range h.config.Modal.Inputs {
 		switch input.Type {
 		case "select":
@@ -242,7 +242,7 @@ func (h *SlackHandler) parseModalPayload(payload string) (*slackmodal.Modal, err
 }
 
 func (h *SlackHandler) generateIncidentMessage(fields map[string]string, username string) string {
-	logutil.Debug("Generating incident message", 
+	logutil.Debug("Generating incident message",
 		zap.String("username", username),
 		zap.Any("fields", fields))
 	replacements := map[string]string{
@@ -259,17 +259,17 @@ func (h *SlackHandler) generateIncidentMessage(fields map[string]string, usernam
 	return message
 }
 
-func (h *SlackHandler) sendSlackMessage(messageText string) error{
-	logutil.Debug("Sending Slack message", 
+func (h *SlackHandler) sendSlackMessage(messageText string) error {
+	logutil.Debug("Sending Slack message",
 		zap.String("channel_id", h.config.SlackConfig.ChannelID))
 
 	_, _, err := h.slackService.PostMessage(h.config.SlackConfig.ChannelID, slack.MsgOptionText(messageText, false))
 
-    if err != nil {
-        return fmt.Errorf("failed to send message to Slack: %w", err)
-    }
+	if err != nil {
+		return fmt.Errorf("failed to send message to Slack: %w", err)
+	}
 
-    return nil
+	return nil
 }
 
 func (h *SlackHandler) sendResponse(w http.ResponseWriter, response interface{}) {
