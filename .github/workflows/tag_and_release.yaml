@@ -20,7 +20,18 @@ jobs:
         with:
           go-version: '>=1.23'
 
+      - name: Check for changes in app folders
+        id: changed-files
+        uses: tj-actions/changed-files@v45
+        with:
+          files: |
+            .github/**
+            cmd/**
+            internal/**
+            pkg/**
+
       - name: Bump version and push tag
+        if: steps.changed-files.outputs.any_changed == 'true'
         id: tag
         uses: anothrNick/github-tag-action@1.71.0
         env:
@@ -29,10 +40,12 @@ jobs:
           DEFAULT_BUMP: patch
 
       - name: Build and package binaries
+        if: steps.changed-files.outputs.any_changed == 'true'
         run: |
           bash .github/scripts/build_and_package.bash "${{ steps.tag.outputs.new_tag }}"
 
       - name: Generate release notes
+        if: steps.changed-files.outputs.any_changed == 'true'
         run: |
           echo "## What's Changed" > release_notes.md
           # Step 1: Find the latest tag before the current HEAD
@@ -42,6 +55,7 @@ jobs:
           git log ${latest_tag}..HEAD --pretty=format:"* %s" >> release_notes.md
 
       - name: Release
+        if: steps.changed-files.outputs.any_changed == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.tag.outputs.new_tag }}
