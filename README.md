@@ -1,6 +1,10 @@
-<p align="center">
-  <img src="doc/img/playtomic-logo.png" alt="Playtomic Logo" width="400"/>
-</p>
+<div align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="doc/img/playtomic-logo-dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="doc/img/playtomic-logo-light.png">
+    <img alt="Playtomic Logo" width="400">
+  </picture>
+</div>
 
 <h1 align="center">Oncall Incident Reporter</h1>
 
@@ -137,8 +141,6 @@ See [Slack Command Setup Guide](doc/example_slack_command.md)
 5. Open a Pull Request
 
 ## About Playtomic
-
-<img align="right" src="doc/img/playtomic-logo.png" alt="Playtomic Logo" width="100"/>
 
 This project is sponsored and maintained by [Playtomic](https://playtomic.io), the leading sports facility booking platform
 in the world. We're passionate about technology and sports, building tools that help millions of players enjoy their favorite
