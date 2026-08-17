@@ -3,7 +3,7 @@ resource "aws_lambda_function" "lambda" {
   function_name = var.service_name
   role          = aws_iam_role.lambda_permissions.arn
   handler       = var.handler
-  runtime       = "provided.al2"
+  runtime       = "provided.al2023"
 
   memory_size = var.memory_size
   timeout     = var.timeout
